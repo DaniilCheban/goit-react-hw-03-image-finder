@@ -4,7 +4,7 @@ const Button = ({ onClick, disabled }) => {
   return (
     <button
       type="button"
-      className="load-more"
+      className="Button"
       onClick={onClick}
       disabled={disabled}
     >

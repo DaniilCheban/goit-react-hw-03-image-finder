@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import axios from 'axios';
-
+import Swal from 'sweetalert2';
 import Searchbar from './Searchbar';
 import ImageGallery from './ImageGallery';
 import Button from './Button';
 import Loader from './Loader';
 import Modal from './Modal';
+import { fetchGalleryItems } from './API';
 
 const App = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -14,31 +14,50 @@ const App = () => {
   const [loading, setLoading] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
 
-  const fetchImages = async (query, currentPage) => {
-    try {
-      setLoading(true);
-      const response = await axios.get(
-        `https://pixabay.com/api/?q=${query}&page=${currentPage}&key=40791678-21bd493143af10c7aa2f36279&image_type=photo&orientation=horizontal&per_page=12`
-      );
-      setImages(prevImages => [...prevImages, ...response.data.hits]);
-    } catch (error) {
-      console.error('Error fetching images:', error);
-    } finally {
+  const fetchImages = () => {
+    if (searchQuery === '') {
       setLoading(false);
+      return;
     }
+
+    const { pages, per_page } = page;
+
+    fetchGalleryItems(searchQuery, pages, per_page)
+      .then(response => {
+        if (!response.data.hits.length) {
+          Swal.fire({
+            title: 'Hmm...',
+            text: "If you don't know what you want, I'm not sure what to show you!",
+            icon: 'question',
+            backdrop: true,
+            confirmButtonText: 'Try again?',
+          });
+        } else {
+          setImages(prevImages => [...prevImages, ...response.data.hits]);
+          setPage(prevPage => prevPage + 1);
+        }
+      })
+      .catch(error => {
+        Swal.fire({
+          title: 'Error!',
+          text: error,
+          icon: 'error',
+          confirmButtonText: 'Not cool (((',
+        });
+        console.error(error);
+      })
+      .finally(() => setLoading(false));
   };
 
   const handleSearchSubmit = query => {
     setSearchQuery(query);
     setImages([]);
     setPage(1);
-    fetchImages(query, 1);
+    fetchImages();
   };
 
   const handleLoadMore = () => {
-    const nextPage = page + 1;
-    setPage(nextPage);
-    fetchImages(searchQuery, nextPage);
+    fetchImages();
   };
 
   const handleImageClick = imageUrl => {
@@ -52,7 +71,11 @@ const App = () => {
   return (
     <div>
       <Searchbar onSubmit={handleSearchSubmit} />
-      <ImageGallery images={images} onImageClick={handleImageClick} />
+      <ImageGallery
+        images={images}
+        onImageClick={handleImageClick}
+        loading={loading}
+      />
       {loading && <Loader />}
       {images.length > 0 && !loading && <Button onClick={handleLoadMore} />}
       {selectedImage && (

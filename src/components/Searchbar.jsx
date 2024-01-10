@@ -14,10 +14,10 @@ const Searchbar = ({ onSubmit }) => {
   };
 
   return (
-    <header className="searchbar">
-      <form onSubmit={handleSubmit} className="form">
-        <button type="submit" className="button">
-          <span className="button-label">Search</span>
+    <header className="`Searchbar">
+      <form onSubmit={handleSubmit} className="SearchForm">
+        <button type="submit" className="SearchForm-button">
+          <span className="SearchForm-button-label">Search</span>
         </button>
 
         <input
@@ -27,7 +27,7 @@ const Searchbar = ({ onSubmit }) => {
           placeholder="Search images and photos"
           value={searchQuery}
           onChange={handleChange}
-          className="input"
+          className="SearchForm-input"
         />
       </form>
     </header>
