@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { Component } from 'react';
 import Swal from 'sweetalert2';
 import Searchbar from './Searchbar';
 import ImageGallery from './ImageGallery';
@@ -7,22 +7,27 @@ import Loader from './Loader';
 import Modal from './Modal';
 import { fetchGalleryItems } from './API';
 
-const App = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [images, setImages] = useState([]);
-  const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [selectedImage, setSelectedImage] = useState(null);
+class App extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      images: [],
+      page: 1,
+      loading: false,
+      selectedImage: null,
+    };
+  }
 
-  const fetchImages = () => {
-    if (searchQuery === '') {
-      setLoading(false);
+  fetchImages = () => {
+    if (this.state.searchQuery === '') {
+      this.setState({ loading: false });
       return;
     }
 
-    const { pages, per_page } = page;
+    const { page } = this.state;
+    const { searchQuery } = this.state;
 
-    fetchGalleryItems(searchQuery, pages, per_page)
+    fetchGalleryItems(searchQuery, page)
       .then(response => {
         if (!response.data.hits.length) {
           Swal.fire({
@@ -33,8 +38,10 @@ const App = () => {
             confirmButtonText: 'Try again?',
           });
         } else {
-          setImages(prevImages => [...prevImages, ...response.data.hits]);
-          setPage(prevPage => prevPage + 1);
+          this.setState(prevState => ({
+            images: [...prevState.images, ...response.data.hits],
+            page: prevState.page + 1,
+          }));
         }
       })
       .catch(error => {
@@ -46,43 +53,51 @@ const App = () => {
         });
         console.error(error);
       })
-      .finally(() => setLoading(false));
+      .finally(() => this.setState({ loading: false }));
   };
 
-  const handleSearchSubmit = query => {
-    setSearchQuery(query);
-    setImages([]);
-    setPage(1);
-    fetchImages();
+  handleSearchSubmit = query => {
+    this.setState({
+      images: [],
+      page: 1,
+      searchQuery: query,
+    });
+    this.fetchImages();
   };
 
-  const handleLoadMore = () => {
-    fetchImages();
+  handleLoadMore = () => {
+    this.fetchImages();
   };
 
-  const handleImageClick = imageUrl => {
-    setSelectedImage(imageUrl);
+  handleImageClick = imageUrl => {
+    this.setState({ selectedImage: imageUrl });
   };
 
-  const handleCloseModal = () => {
-    setSelectedImage(null);
+  handleCloseModal = () => {
+    this.setState({ selectedImage: null });
   };
 
-  return (
-    <div>
-      <Searchbar onSubmit={handleSearchSubmit} />
-      <ImageGallery
-        images={images}
-        onImageClick={handleImageClick}
-        loading={loading}
-      />
-      {loading && <Loader />}
-      {images.length > 0 && !loading && <Button onClick={handleLoadMore} />}
-      {selectedImage && (
-        <Modal imageUrl={selectedImage} onClose={handleCloseModal} />
-      )}
-    </div>
-  );
-};
+  render() {
+    const { images, loading, selectedImage } = this.state;
+
+    return (
+      <div>
+        <Searchbar onSubmit={this.handleSearchSubmit} />
+        <ImageGallery
+          images={images}
+          onImageClick={this.handleImageClick}
+          loading={loading}
+        />
+        {loading && <Loader />}
+        {images.length > 0 && !loading && (
+          <Button onClick={this.handleLoadMore} />
+        )}
+        {selectedImage && (
+          <Modal imageUrl={selectedImage} onClose={this.handleCloseModal} />
+        )}
+      </div>
+    );
+  }
+}
 
 export { App };
