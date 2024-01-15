@@ -8,14 +8,31 @@ import Modal from './Modal';
 import { fetchGalleryItems } from './API';
 
 class App extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
+  state = {
+    images: [],
+    page: 1,
+    loading: false,
+    selectedImage: null,
+  };
+  handleSearchSubmit = query => {
+    this.setState({
       images: [],
       page: 1,
-      loading: false,
-      selectedImage: null,
-    };
+      searchQuery: query,
+    });
+  };
+
+  handleLoadMore = () => {
+    this.setState(prevState => ({ page: prevState.page + 1 }));
+  };
+
+  componentDidUpdate(prevProps, prevState) {
+    if (
+      this.state.page !== prevState.page ||
+      this.state.searchQuery !== prevState.searchQuery
+    ) {
+      this.fetchImages();
+    }
   }
 
   fetchImages = () => {
@@ -24,10 +41,10 @@ class App extends Component {
       return;
     }
 
-    const { page } = this.state;
-    const { searchQuery } = this.state;
+    const { page, searchQuery } = this.state;
+    const perPage = 12;
 
-    fetchGalleryItems(searchQuery, page)
+    fetchGalleryItems(searchQuery, page, perPage)
       .then(response => {
         if (!response.data.hits.length) {
           Swal.fire({
@@ -38,9 +55,10 @@ class App extends Component {
             confirmButtonText: 'Try again?',
           });
         } else {
+          const newImages = response.data.hits.slice(0, perPage); // Вибираємо лише перші 12 картинок
           this.setState(prevState => ({
-            images: [...prevState.images, ...response.data.hits],
-            page: prevState.page + 1,
+            images: [...prevState.images, ...newImages],
+            page: prevState.page,
           }));
         }
       })
@@ -54,19 +72,6 @@ class App extends Component {
         console.error(error);
       })
       .finally(() => this.setState({ loading: false }));
-  };
-
-  handleSearchSubmit = query => {
-    this.setState({
-      images: [],
-      page: 1,
-      searchQuery: query,
-    });
-    this.fetchImages();
-  };
-
-  handleLoadMore = () => {
-    this.fetchImages();
   };
 
   handleImageClick = imageUrl => {
