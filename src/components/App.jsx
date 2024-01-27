@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import Swal from 'sweetalert2';
 import Searchbar from './Searchbar';
 import ImageGallery from './ImageGallery';
 import Button from './Button';
@@ -14,7 +13,12 @@ class App extends Component {
     loading: false,
     selectedImage: null,
   };
+
   handleSearchSubmit = query => {
+    if (query.trim() === '') {
+      return;
+    }
+
     this.setState({
       images: [],
       page: 1,
@@ -24,6 +28,9 @@ class App extends Component {
 
   handleLoadMore = () => {
     this.setState(prevState => ({ page: prevState.page + 1 }));
+  };
+  handleImageClick = imageUrl => {
+    this.setState({ selectedImage: imageUrl });
   };
 
   componentDidUpdate(prevProps, prevState) {
@@ -42,25 +49,15 @@ class App extends Component {
     }
 
     const { page, searchQuery } = this.state;
-    const perPage = 12;
 
-    fetchGalleryItems(searchQuery, page, perPage)
+    fetchGalleryItems(searchQuery, page)
       .then(response => {
-        if (!response.data.hits.length) {
-          Swal.fire({
-            title: 'Hmm...',
-            text: "If you don't know what you want, I'm not sure what to show you!",
-            icon: 'question',
-            backdrop: true,
-            confirmButtonText: 'Try again?',
-          });
-        } else {
-          const newImages = response.data.hits.slice(0, perPage); // Вибираємо лише перші 12 картинок
-          this.setState(prevState => ({
-            images: [...prevState.images, ...newImages],
-            page: prevState.page,
-          }));
-        }
+        const { hits, totalHits } = response.data;
+
+        this.setState(prev => ({
+          images: [...prev.images, ...hits],
+          loadMore: page < Math.ceil(totalHits / 12),
+        }));
       })
       .catch(error => {
         console.error('Error fetching images:', error);
@@ -68,12 +65,14 @@ class App extends Component {
       .finally(() => this.setState({ loading: false }));
   };
 
-  handleImageClick = imageUrl => {
-    this.setState({ selectedImage: imageUrl });
-  };
-
   handleCloseModal = () => {
     this.setState({ selectedImage: null });
+  };
+
+  handleModalClick = e => {
+    if (e.target === e.currentTarget) {
+      this.handleCloseModal();
+    }
   };
 
   render() {
@@ -92,7 +91,11 @@ class App extends Component {
           <Button onClick={this.handleLoadMore} />
         )}
         {selectedImage && (
-          <Modal imageUrl={selectedImage} onClose={this.handleCloseModal} />
+          <Modal
+            imageUrl={selectedImage}
+            onClose={this.handleCloseModal}
+            onClick={this.handleModalClick}
+          />
         )}
       </div>
     );
