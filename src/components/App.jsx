@@ -63,13 +63,7 @@ class App extends Component {
         }
       })
       .catch(error => {
-        Swal.fire({
-          title: 'Error!',
-          text: error,
-          icon: 'error',
-          confirmButtonText: 'Not cool (((',
-        });
-        console.error(error);
+        console.error('Error fetching images:', error);
       })
       .finally(() => this.setState({ loading: false }));
   };
