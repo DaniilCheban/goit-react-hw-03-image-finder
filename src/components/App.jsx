@@ -12,6 +12,7 @@ class App extends Component {
     page: 1,
     loading: false,
     selectedImage: null,
+    loadMore: false,
   };
 
   handleSearchSubmit = query => {
@@ -69,14 +70,8 @@ class App extends Component {
     this.setState({ selectedImage: null });
   };
 
-  handleModalClick = e => {
-    if (e.target === e.currentTarget) {
-      this.handleCloseModal();
-    }
-  };
-
   render() {
-    const { images, loading, selectedImage } = this.state;
+    const { images, loading, selectedImage, loadMore } = this.state;
 
     return (
       <div>
@@ -87,15 +82,11 @@ class App extends Component {
           loading={loading}
         />
         {loading && <Loader />}
-        {images.length > 0 && !loading && (
-          <Button onClick={this.handleLoadMore} />
-        )}
         {selectedImage && (
-          <Modal
-            imageUrl={selectedImage}
-            onClose={this.handleCloseModal}
-            onClick={this.handleModalClick}
-          />
+          <Modal imageUrl={selectedImage} onClose={this.handleCloseModal} />
+        )}
+        {loadMore && images.length > 0 && !loading && (
+          <Button onClick={this.handleLoadMore} />
         )}
       </div>
     );
